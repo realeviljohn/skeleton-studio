@@ -1606,6 +1606,7 @@ async function recordComposition() {
 
 let ffmpegInstance = null;
 
+
 async function getFFmpeg() {
   if (ffmpegInstance) return ffmpegInstance;
 
@@ -1629,15 +1630,23 @@ async function getFFmpeg() {
       baseURL + "/ffmpeg-core.js",
       "text/javascript"
     ),
+
     wasmURL: await toBlobURL(
       baseURL + "/ffmpeg-core.wasm",
       "application/wasm"
-    )
+    ),
+
+    // Load FFmpeg's main worker from our own GitHub Pages site
+    classWorkerURL: new URL(
+      "https://realeviljohn.github.io/skeleton-studio/ffmpeg/worker.js",
+      window.location.href
+    ).href
   });
 
   ffmpegInstance = ffmpeg;
   return ffmpeg;
 }
+
 
 async function convertRecording(blob, format, quality) {
   if (format === "webm") return blob;
