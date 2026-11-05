@@ -1607,45 +1607,45 @@ async function recordComposition() {
 let ffmpegInstance = null;
 
 
+
+
 async function getFFmpeg() {
   if (ffmpegInstance) return ffmpegInstance;
 
   $("exportStatus").textContent = "Loading export converter...";
 
-  const { FFmpeg } = await import(
-    "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js"
-  );
+  try {
+    const { FFmpeg } = await import(
+      "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js"
+    );
 
-  const { toBlobURL } = await import(
-    "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js"
-  );
+    const ffmpeg = new FFmpeg();
 
-  const ffmpeg = new FFmpeg();
-
-  const baseURL =
-    "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd";
-
-  await ffmpeg.load({
-    coreURL: await toBlobURL(
-      baseURL + "/ffmpeg-core.js",
-      "text/javascript"
-    ),
-
-    wasmURL: await toBlobURL(
-      baseURL + "/ffmpeg-core.wasm",
-      "application/wasm"
-    ),
-
-    // Load FFmpeg's main worker from our own GitHub Pages site
-    classWorkerURL: new URL(
-      "https://realeviljohn.github.io/skeleton-studio/ffmpeg/worker.js",
+    // Use absolute URLs hosted on our own GitHub Pages site
+    const baseURL = new URL(
+      "./ffmpeg/",
       window.location.href
-    ).href
-  });
+    ).href;
 
-  ffmpegInstance = ffmpeg;
-  return ffmpeg;
+    await ffmpeg.load({
+      coreURL: baseURL + "ffmpeg-core.js",
+      wasmURL: baseURL + "ffmpeg-core.wasm",
+      classWorkerURL: baseURL + "worker.js"
+    });
+
+    ffmpegInstance = ffmpeg;
+
+    console.log("FFmpeg loaded successfully!");
+
+    return ffmpeg;
+
+  } catch (error) {
+    console.error("FFmpeg initialization failed:", error);
+    throw error;
+  }
 }
+
+
 
 
 async function convertRecording(blob, format, quality) {
@@ -1739,14 +1739,19 @@ $("exportButton").addEventListener("click", async () => {
     $("exportStatus").textContent = "Export complete!";
 
   } catch (error) {
-    console.error(error);
+  console.error("FULL EXPORT ERROR:", error);
 
-    $("exportStatus").textContent =
-      "Export failed: " + error.message;
+  console.error("Error name:", error?.name);
+  console.error("Error message:", error?.message);
+  console.error("Error stack:", error?.stack);
 
-  } finally {
-    button.disabled = false;
-  }
+  const details = error?.message ||
+    (typeof error === "string" ? error : JSON.stringify(error)) ||
+    "Unknown error. Check browser console.";
+
+  $("exportStatus").textContent =
+    "Export failed: " + details;
+}
 });
 
 // INITIALISE
