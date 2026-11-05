@@ -1,0 +1,1750 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skeleton Studio</title>
+
+<style>
+:root {
+  --bg: #101010;
+  --panel: #1b1b1b;
+  --panel2: #252525;
+  --border: #393939;
+  --text: #f2f2f2;
+  --muted: #999;
+  --accent: #c7ff4a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+}
+
+header {
+  margin-bottom: 25px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 30px;
+  letter-spacing: 3px;
+}
+
+header p, .muted {
+  color: var(--muted);
+}
+
+h2 {
+  font-size: 16px;
+  letter-spacing: 1px;
+  margin-top: 0;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+button, input, select {
+  font: inherit;
+}
+
+button {
+  background: var(--accent);
+  color: #111;
+  border: 0;
+  border-radius: 7px;
+  padding: 11px 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #383838;
+  color: white;
+}
+
+button.danger {
+  background: #a93636;
+  color: white;
+}
+
+button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+input[type="number"], select {
+  background: #292929;
+  color: white;
+  border: 1px solid #444;
+  border-radius: 7px;
+  padding: 9px;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.transport {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.preview {
+  width: 100%;
+  background: #080808;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+#mediaFrame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 650px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#photo, #video {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: none;
+}
+
+#overlayLayer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.overlay-preview {
+  position: absolute;
+  width: 70%;
+  height: 100%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  object-fit: contain;
+  display: none;
+}
+
+.library {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.library-card {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  padding: 15px;
+  border-radius: 9px;
+  cursor: grab;
+  user-select: none;
+}
+
+.library-card video {
+  width: 100%;
+  height: 115px;
+  object-fit: contain;
+  background: #101010;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  pointer-events: none;
+}
+
+.library-card strong {
+  display: block;
+  margin-bottom: 7px;
+}
+
+.timeline-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: #111;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.ruler {
+  height: 30px;
+  position: relative;
+  background: #222;
+  border-bottom: 1px solid #444;
+  font-size: 11px;
+  color: #aaa;
+}
+
+.ruler-mark {
+  position: absolute;
+  top: 7px;
+  border-left: 1px solid #666;
+  padding-left: 4px;
+  height: 18px;
+}
+
+.timeline-canvas {
+  height: 110px;
+  position: relative;
+  background:
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent 99px,
+      #292929 100px
+    );
+}
+
+.track-label {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  color: #777;
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.clip {
+  position: absolute;
+  top: 35px;
+  height: 53px;
+  background: #4d6126;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  color: white;
+  font-size: 12px;
+  padding: 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  will-change: left;
+}
+
+.clip.selected {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+.clip.dragging {
+  cursor: grabbing;
+  z-index: 20;
+  opacity: .9;
+}
+
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #ff5555;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.playhead::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: -5px;
+  width: 12px;
+  height: 10px;
+  background: #ff5555;
+  border-radius: 3px;
+}
+
+.properties {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.property label {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+#exportStatus {
+  font-size: 13px;
+}
+
+@media(max-width:600px) {
+  body { padding: 12px; }
+  header h1 { font-size: 23px; }
+  .panel { padding: 14px; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>SKELETON STUDIO</h1>
+  <p>Make your own skeleton running memes!</p>
+</header>
+
+<section class="panel">
+  <h2>Upload the background</h2>
+  <input id="upload" type="file" accept="image/*,video/*">
+  <p class="muted">Upload a photo or video for your background</p>
+</section>
+
+<section class="panel">
+  <h2>PREVIEW</h2>
+
+  <div class="preview">
+    <div id="mediaFrame">
+      <img id="photo" alt="Uploaded background">
+      <video id="video" muted playsinline></video>
+      <div id="overlayLayer"></div>
+    </div>
+  </div>
+
+  <div class="transport">
+    <button id="playButton">▶ Play</button>
+    <button id="stopButton" class="secondary">■ Stop</button>
+    <span id="timeLabel" class="muted">00:00 / 00:10</span>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Library of skeletons</h2>
+  <p class="muted">Drag an animation onto the timeline</p>
+
+  <div class="library">
+    <div class="library-card" draggable="true"
+         data-src="assets/skeleton1.webm"
+         data-version="Skeleton 1">
+      <video src="assets/skeleton1.webm" muted loop autoplay playsinline></video>
+      <strong>Skeleton 1</strong>
+      <span class="muted">Drag to timeline</span>
+    </div>
+
+    <div class="library-card" draggable="true"
+         data-src="assets/skeleton2.webm"
+         data-version="Skeleton 2">
+      <video src="assets/skeleton2.webm" muted loop autoplay playsinline></video>
+      <strong>Skeleton 2</strong>
+      <span class="muted">Drag to timeline</span>
+    </div>
+
+    <div class="library-card" draggable="true"
+         data-src="assets/skeleton3.webm"
+         data-version="Skeleton 3">
+      <video src="assets/skeleton3.webm" muted loop autoplay playsinline></video>
+      <strong>Skeleton 3</strong>
+      <span class="muted">Drag to timeline</span>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Timeline</h2>
+
+  <div class="transport">
+    <label>
+      <span class="muted">Maximum duration (seconds)</span><br>
+      <input id="durationLimit" type="number"
+             min="1" max="600" value="10">
+    </label>
+  </div>
+
+  <p class="muted">
+    Grab a clip to move it. Its center will snap to your cursor.
+    You can also drag animations from the library.
+  </p>
+
+  <div class="timeline-scroll" id="timelineScroll">
+    <div id="ruler" class="ruler"></div>
+
+    <div id="timelineCanvas" class="timeline-canvas">
+      <span class="track-label">ANIMATION TRACK</span>
+      <div id="overlayTrack"></div>
+      <div id="playhead" class="playhead"></div>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Selected clip settings</h2>
+
+  <div id="noSelection" class="muted">
+    Select a clip on the timeline to edit it
+  </div>
+
+  <div id="clipProperties" style="display:none">
+    <div class="properties">
+      <div class="property">
+        <label id="selectedName">Selected clip</label>
+        <label for="speed">Speed</label>
+        <input id="speed" type="range"
+               min="0.25" max="3" step="0.05" value="1">
+        <span id="speedValue" class="muted">1.00x</span>
+      </div>
+
+      <div class="property">
+        <label for="scale">Size</label>
+        <input id="scale" type="range"
+               min="20" max="150" step="1" value="100">
+        <span id="scaleValue" class="muted">100%</span>
+      </div>
+    </div>
+
+    <div class="transport">
+      <button id="deleteButton" class="danger">Delete Clip</button>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Export your meme</h2>
+
+  <div class="properties">
+    <div class="property">
+      <label for="exportFormat">Export format</label>
+      <select id="exportFormat">
+        <option value="mp4">MP4</option>
+        <option value="webm">WebM</option>
+        <option value="gif">GIF</option>
+        <option value="mkv">MKV</option>
+        <option value="mov">MOV</option>
+      </select>
+    </div>
+
+    <div class="property">
+      <label for="exportQuality">Export quality</label>
+      <select id="exportQuality">
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="transport">
+    <button id="exportButton">↓ Export Meme</button>
+    <span id="exportStatus" class="muted"></span>
+  </div>
+
+  <p class="muted">
+    GIF has no audio. Other formats may preserve background video audio
+    when supported by your browser.
+  </p>
+</section>
+
+<section class="panel">
+  <button id="resetButton" class="secondary">Reset Project</button>
+</section>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const upload = $("upload");
+const photo = $("photo");
+const video = $("video");
+const mediaFrame = $("mediaFrame");
+const overlayLayer = $("overlayLayer");
+const timelineCanvas = $("timelineCanvas");
+const overlayTrack = $("overlayTrack");
+const ruler = $("ruler");
+const playhead = $("playhead");
+
+const speedInput = $("speed");
+const scaleInput = $("scale");
+
+const PX_PER_SECOND = 100;
+const DEFAULT_PHOTO_DURATION = 10;
+
+let clips = [];
+let selectedClip = null;
+let clipCounter = 0;
+
+let mediaUrl = null;
+let mediaType = null;
+let mediaDuration = 0;
+let mediaWidth = 1280;
+let mediaHeight = 720;
+
+let projectLimit = DEFAULT_PHOTO_DURATION;
+let currentTime = 0;
+let playing = false;
+let lastFrame = 0;
+let animationFrame = null;
+
+let activeDrag = null;
+let dragAnimationFrame = null;
+
+const overlayVideos = new Map();
+
+function formatTime(seconds) {
+  seconds = Math.max(0, seconds || 0);
+  const minutes = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+
+  return String(minutes).padStart(2, "0") + ":" +
+         String(secs).padStart(2, "0");
+}
+
+function getTimelineDuration() {
+  return mediaType === "video"
+    ? Math.min(projectLimit, mediaDuration)
+    : projectLimit;
+}
+
+function getClipDuration(clip) {
+  return clip.trimDuration / clip.speed;
+}
+
+function getTimelineEnd(clip) {
+  return clip.start + getClipDuration(clip);
+}
+
+function getTimelineClips() {
+  return clips.slice().sort((a, b) => a.start - b.start);
+}
+
+function updateMediaFrame() {
+  if (mediaWidth > 0 && mediaHeight > 0) {
+    mediaFrame.style.aspectRatio =
+      mediaWidth + " / " + mediaHeight;
+  }
+}
+
+function getVideoDuration(src) {
+  return new Promise((resolve, reject) => {
+    const temp = document.createElement("video");
+    temp.preload = "metadata";
+    temp.muted = true;
+    temp.src = src;
+
+    temp.onloadedmetadata = () => {
+      const duration = temp.duration;
+      temp.removeAttribute("src");
+      temp.load();
+
+      if (Number.isFinite(duration) && duration > 0) {
+        resolve(duration);
+      } else {
+        reject(new Error("Could not read animation duration."));
+      }
+    };
+
+    temp.onerror = () => reject(
+      new Error("Could not load animation: " + src)
+    );
+  });
+}
+
+function createOverlayVideo(clip) {
+  const element = document.createElement("video");
+
+  element.src = clip.src;
+  element.muted = true;
+  element.loop = false;
+  element.playsInline = true;
+  element.preload = "auto";
+  element.className = "overlay-preview";
+
+  overlayLayer.appendChild(element);
+  overlayVideos.set(clip.id, element);
+
+  return element;
+}
+
+function removeOverlayVideo(id) {
+  const element = overlayVideos.get(id);
+
+  if (element) {
+    element.pause();
+    element.removeAttribute("src");
+    element.load();
+    element.remove();
+    overlayVideos.delete(id);
+  }
+}
+
+function clearOverlayVideos() {
+  for (const id of [...overlayVideos.keys()]) {
+    removeOverlayVideo(id);
+  }
+}
+
+async function addClip(src, version, start) {
+  if (start >= getTimelineDuration()) return;
+
+  let duration;
+
+  try {
+    duration = await getVideoDuration(src);
+  } catch (error) {
+    alert(error.message);
+    return;
+  }
+
+  const limit = getTimelineDuration();
+
+  if (start >= limit) return;
+
+  const clip = {
+    id: ++clipCounter,
+    src,
+    version,
+    start,
+    sourceDuration: duration,
+    trimDuration: Math.min(
+      duration,
+      (limit - start)
+    ),
+    speed: 1,
+    scale: 100
+  };
+
+  clips.push(clip);
+
+  createOverlayVideo(clip);
+  selectClip(clip.id);
+  renderTimeline();
+  syncOverlays();
+}
+
+function selectClip(id) {
+  selectedClip = id;
+  updateProperties();
+
+  document.querySelectorAll(".clip").forEach(element => {
+    element.classList.toggle(
+      "selected",
+      Number(element.dataset.id) === id
+    );
+  });
+}
+
+function updateProperties() {
+  const clip = clips.find(c => c.id === selectedClip);
+
+  $("noSelection").style.display = clip ? "none" : "block";
+  $("clipProperties").style.display = clip ? "block" : "none";
+
+  if (!clip) return;
+
+  $("selectedName").textContent = clip.version;
+  speedInput.value = clip.speed;
+  scaleInput.value = clip.scale;
+
+  $("speedValue").textContent = clip.speed.toFixed(2) + "x";
+  $("scaleValue").textContent = clip.scale + "%";
+}
+
+function renderTimeline() {
+  const duration = getTimelineDuration();
+  const width = Math.max(100, duration * PX_PER_SECOND);
+
+  timelineCanvas.style.width = width + "px";
+  ruler.style.width = width + "px";
+
+  ruler.innerHTML = "";
+
+  for (let t = 0; t <= duration; t++) {
+    const mark = document.createElement("div");
+    mark.className = "ruler-mark";
+    mark.style.left = (t * PX_PER_SECOND) + "px";
+    mark.textContent = t + "s";
+    ruler.appendChild(mark);
+  }
+
+  overlayTrack.innerHTML = "";
+
+  for (const clip of getTimelineClips()) {
+    const element = document.createElement("div");
+
+    element.className = "clip";
+    element.textContent = clip.version;
+    element.dataset.id = clip.id;
+
+    element.style.left = (clip.start * PX_PER_SECOND) + "px";
+    element.style.width = Math.max(
+      25,
+      getClipDuration(clip) * PX_PER_SECOND
+    ) + "px";
+
+    if (clip.id === selectedClip) {
+      element.classList.add("selected");
+    }
+
+    element.addEventListener("pointerdown", startClipDrag);
+
+    overlayTrack.appendChild(element);
+  }
+
+  updatePlayhead();
+}
+
+/* ------------------------------------------------
+   SMOOTH CLIP DRAGGING
+------------------------------------------------ */
+
+function startClipDrag(event) {
+  if (event.button !== 0) return;
+
+  event.preventDefault();
+
+  const element = event.currentTarget;
+  const id = Number(element.dataset.id);
+  const clip = clips.find(c => c.id === id);
+
+  if (!clip) return;
+
+  selectClip(id);
+
+  const rect = timelineCanvas.getBoundingClientRect();
+  const clipWidth = element.getBoundingClientRect().width;
+
+  // The clip's center immediately moves to the pointer.
+  const pointerTime =
+    (event.clientX - rect.left) / PX_PER_SECOND;
+
+  const newStart =
+    pointerTime - (clipWidth / PX_PER_SECOND) / 2;
+
+  const maxStart = Math.max(
+    0,
+    getTimelineDuration() - getClipDuration(clip)
+  );
+
+  clip.start = Math.max(0, Math.min(maxStart, newStart));
+
+  element.style.left = clip.start * PX_PER_SECOND + "px";
+  element.classList.add("dragging");
+
+  activeDrag = {
+    pointerId: event.pointerId,
+    clip,
+    element,
+    lastClientX: event.clientX,
+    canvasRect: rect
+  };
+
+  element.setPointerCapture(event.pointerId);
+
+  element.addEventListener("pointermove", onClipPointerMove);
+  element.addEventListener("pointerup", finishClipDrag);
+  element.addEventListener("pointercancel", finishClipDrag);
+}
+
+function onClipPointerMove(event) {
+  if (!activeDrag) return;
+  if (event.pointerId !== activeDrag.pointerId) return;
+
+  activeDrag.lastClientX = event.clientX;
+
+  if (dragAnimationFrame !== null) return;
+
+  dragAnimationFrame = requestAnimationFrame(() => {
+    dragAnimationFrame = null;
+
+    if (!activeDrag) return;
+
+    const {
+      clip,
+      element,
+      lastClientX,
+      canvasRect
+    } = activeDrag;
+
+    // Recalculate the rectangle in case the page layout changes.
+    const rect = timelineCanvas.getBoundingClientRect();
+
+    // Convert pointer position into timeline seconds.
+    const pointerTime =
+      (lastClientX - rect.left) / PX_PER_SECOND;
+
+    // Keep the center of the clip directly beneath the pointer.
+    const clipDuration = getClipDuration(clip);
+    const proposedStart = pointerTime - clipDuration / 2;
+
+    const maxStart = Math.max(
+      0,
+      getTimelineDuration() - clipDuration
+    );
+
+    clip.start = Math.max(
+      0,
+      Math.min(maxStart, proposedStart)
+    );
+
+    // Only update the existing clip element.
+    // Never rebuild the timeline while dragging.
+    element.style.left =
+      clip.start * PX_PER_SECOND + "px";
+  });
+}
+
+function finishClipDrag(event) {
+  if (!activeDrag) return;
+  if (event.pointerId !== activeDrag.pointerId) return;
+
+  const { element } = activeDrag;
+
+  element.removeEventListener("pointermove", onClipPointerMove);
+  element.removeEventListener("pointerup", finishClipDrag);
+  element.removeEventListener("pointercancel", finishClipDrag);
+
+  element.classList.remove("dragging");
+
+  activeDrag = null;
+
+  if (dragAnimationFrame !== null) {
+    cancelAnimationFrame(dragAnimationFrame);
+    dragAnimationFrame = null;
+  }
+
+  renderTimeline();
+  syncOverlays();
+}
+
+/* ------------------------------------------------
+   PLAYBACK
+------------------------------------------------ */
+
+function updatePlayhead() {
+  playhead.style.left = currentTime * PX_PER_SECOND + "px";
+
+  $("timeLabel").textContent =
+    formatTime(currentTime) + " / " +
+    formatTime(getTimelineDuration());
+}
+
+function seek(time) {
+  const duration = getTimelineDuration();
+
+  currentTime = Math.max(0, Math.min(duration, time));
+
+  if (mediaType === "video" && video.readyState >= 1) {
+    const target = Math.min(
+      currentTime,
+      Math.max(0, mediaDuration - 0.05)
+    );
+
+    if (Math.abs(video.currentTime - target) > 0.2) {
+      video.currentTime = target;
+    }
+  }
+
+  updatePlayhead();
+  syncOverlays();
+}
+
+function syncOverlays() {
+  for (const clip of clips) {
+    const element = overlayVideos.get(clip.id);
+    if (!element) continue;
+
+    const clipTime = currentTime - clip.start;
+
+    const active =
+      clipTime >= 0 &&
+      clipTime < getClipDuration(clip);
+
+    if (!active) {
+      element.pause();
+      element.style.display = "none";
+      continue;
+    }
+
+    const desiredTime = Math.min(
+      clipTime * clip.speed,
+      Math.max(0, clip.trimDuration - 0.04)
+    );
+
+    element.style.display = "block";
+    element.style.width = (70 * clip.scale / 100) + "%";
+
+    if (
+      Math.abs(element.currentTime - desiredTime) > 0.25 ||
+      element.readyState < 2
+    ) {
+      try {
+        element.currentTime = desiredTime;
+      } catch (error) {}
+    }
+
+    element.playbackRate = clip.speed;
+
+    if (playing && element.paused) {
+    element.play().catch(() => {});
+    }
+  }
+}
+
+function startPlayback() {
+  if (playing) return;
+
+  if (currentTime >= getTimelineDuration()) {
+    seek(0);
+  }
+
+  playing = true;
+  lastFrame = performance.now();
+
+  if (mediaType === "video") {
+    video.play().catch(() => {});
+  }
+
+  syncOverlays();
+
+  function frame(now) {
+    if (!playing) return;
+
+    const delta = Math.min((now - lastFrame) / 1000, 0.1);
+    lastFrame = now;
+
+    currentTime += delta;
+
+    if (currentTime >= getTimelineDuration()) {
+      currentTime = getTimelineDuration();
+      updatePlayhead();
+      stopPlayback();
+      return;
+    }
+
+    if (mediaType === "video" && video.readyState >= 2) {
+      if (Math.abs(video.currentTime - currentTime) > 0.3) {
+        video.currentTime = Math.min(
+          currentTime,
+          Math.max(0, mediaDuration - 0.05)
+        );
+      }
+    }
+
+    syncOverlays();
+    updatePlayhead();
+
+    animationFrame = requestAnimationFrame(frame);
+  }
+
+  animationFrame = requestAnimationFrame(frame);
+  $("playButton").textContent = "Ⅱ Pause";
+}
+
+function stopPlayback() {
+  playing = false;
+
+  if (animationFrame !== null) {
+    cancelAnimationFrame(animationFrame);
+    animationFrame = null;
+  }
+
+  video.pause();
+
+  for (const element of overlayVideos.values()) {
+    element.pause();
+  }
+
+  $("playButton").textContent = "▶ Play";
+  syncOverlays();
+}
+
+$("playButton").addEventListener("click", () => {
+  if (playing) stopPlayback();
+  else startPlayback();
+});
+
+$("stopButton").addEventListener("click", () => {
+  stopPlayback();
+  seek(0);
+});
+
+/* ------------------------------------------------
+   UPLOAD
+------------------------------------------------ */
+
+upload.addEventListener("change", () => {
+  const file = upload.files[0];
+  if (!file) return;
+
+  stopPlayback();
+  clearOverlayVideos();
+
+  clips = [];
+  selectedClip = null;
+  currentTime = 0;
+
+  if (mediaUrl) {
+    URL.revokeObjectURL(mediaUrl);
+  }
+
+  mediaUrl = URL.createObjectURL(file);
+  mediaType = file.type.startsWith("video/") ? "video" : "image";
+
+  if (mediaType === "image") {
+    photo.src = mediaUrl;
+    photo.style.display = "block";
+    video.style.display = "none";
+
+    photo.onload = () => {
+      mediaWidth = photo.naturalWidth;
+      mediaHeight = photo.naturalHeight;
+      updateMediaFrame();
+      renderTimeline();
+      updateProperties();
+    };
+
+  } else {
+    photo.style.display = "none";
+    video.style.display = "block";
+    video.src = mediaUrl;
+
+    video.onloadedmetadata = () => {
+      mediaDuration = video.duration;
+      mediaWidth = video.videoWidth || 1280;
+      mediaHeight = video.videoHeight || 720;
+
+      updateMediaFrame();
+      renderTimeline();
+      updateProperties();
+    };
+  }
+
+  seek(0);
+});
+
+/* ------------------------------------------------
+   LIBRARY DRAGGING: NEW CLIPS ONLY
+------------------------------------------------ */
+
+document.querySelectorAll(".library-card").forEach(card => {
+  card.addEventListener("dragstart", event => {
+    event.dataTransfer.setData(
+      "application/json",
+      JSON.stringify({
+        type: "new",
+        src: card.dataset.src,
+        version: card.dataset.version
+      })
+    );
+  });
+});
+
+timelineCanvas.addEventListener("dragover", event => {
+  event.preventDefault();
+});
+
+timelineCanvas.addEventListener("drop", async event => {
+  event.preventDefault();
+
+  const text = event.dataTransfer.getData("application/json");
+  if (!text) return;
+
+  let data;
+
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return;
+  }
+
+  if (data.type !== "new") return;
+
+  const rect = timelineCanvas.getBoundingClientRect();
+
+  const dropTime = Math.max(
+    0,
+    Math.min(
+      getTimelineDuration(),
+      (event.clientX - rect.left) / PX_PER_SECOND
+    )
+  );
+
+  await addClip(data.src, data.version, dropTime);
+});
+
+/* ------------------------------------------------
+   DELETE
+------------------------------------------------ */
+
+function deleteSelectedClip() {
+  if (selectedClip === null) return;
+
+  clips = clips.filter(c => c.id !== selectedClip);
+  removeOverlayVideo(selectedClip);
+
+  selectedClip = null;
+
+  updateProperties();
+  renderTimeline();
+  syncOverlays();
+}
+
+$("deleteButton").addEventListener("click", deleteSelectedClip);
+
+document.addEventListener("keydown", event => {
+  if (event.key !== "Delete" && event.key !== "Backspace") return;
+
+  if (
+    event.target.matches("input, textarea, select") ||
+    event.target.isContentEditable
+  ) return;
+
+  if (selectedClip === null) return;
+
+  event.preventDefault();
+  deleteSelectedClip();
+});
+
+/* ------------------------------------------------
+   CLIP SETTINGS
+------------------------------------------------ */
+
+speedInput.addEventListener("input", () => {
+  const clip = clips.find(c => c.id === selectedClip);
+  if (!clip) return;
+
+  // Update playback speed.
+  clip.speed = Number(speedInput.value);
+
+  // Keep the original animation duration available.
+  clip.trimDuration = Math.min(
+    clip.sourceDuration,
+    Math.max(
+      0,
+      (getTimelineDuration() - clip.start) * clip.speed
+    )
+  );
+
+  $("speedValue").textContent =
+    clip.speed.toFixed(2) + "x";
+
+  // Update the timeline clip without rebuilding everything.
+  const element = document.querySelector(
+    `.clip[data-id="${clip.id}"]`
+  );
+
+  if (element) {
+    element.style.width =
+      Math.max(25, getClipDuration(clip) * PX_PER_SECOND) + "px";
+  }
+
+  // Update the animation preview.
+  const overlay = overlayVideos.get(clip.id);
+
+  if (overlay) {
+    overlay.playbackRate = clip.speed;
+
+    const localTime = currentTime - clip.start;
+
+    if (localTime >= 0 && localTime < getClipDuration(clip)) {
+      const desiredTime = Math.min(
+        localTime * clip.speed,
+        Math.max(0, clip.trimDuration - 0.04)
+      );
+
+      if (Math.abs(overlay.currentTime - desiredTime) > 0.15) {
+        overlay.currentTime = desiredTime;
+      }
+
+      overlay.style.display = "block";
+
+      if (playing && overlay.paused) {
+        overlay.play().catch(() => {});
+      }
+    } else {
+      overlay.pause();
+      overlay.style.display = "none";
+    }
+  }
+});
+
+scaleInput.addEventListener("input", () => {
+  const clip = clips.find(c => c.id === selectedClip);
+  if (!clip) return;
+
+  clip.scale = Number(scaleInput.value);
+
+  $("scaleValue").textContent = clip.scale + "%";
+
+  const element = overlayVideos.get(clip.id);
+  if (element) {
+    element.style.width = (70 * clip.scale / 100) + "%";
+  }
+});
+
+/* ------------------------------------------------
+   DURATION LIMIT
+------------------------------------------------ */
+
+function trimClipsToLimit() {
+  const limit = getTimelineDuration();
+
+  clips = clips.filter(clip => {
+    const availableTime = limit - clip.start;
+
+    if (availableTime <= 0) {
+      removeOverlayVideo(clip.id);
+
+      if (selectedClip === clip.id) {
+        selectedClip = null;
+      }
+
+      return false;
+    }
+
+    clip.trimDuration = Math.min(
+      clip.sourceDuration,
+      availableTime * clip.speed
+    );
+
+    return clip.trimDuration > 0;
+  });
+
+  if (currentTime > limit) {
+    stopPlayback();
+    seek(limit);
+  }
+
+  updateProperties();
+  renderTimeline();
+  syncOverlays();
+}
+
+$("durationLimit").addEventListener("change", event => {
+  const value = Number(event.target.value);
+
+  if (!Number.isFinite(value)) return;
+
+  projectLimit = Math.max(1, Math.min(600, value));
+  event.target.value = projectLimit;
+
+  trimClipsToLimit();
+});
+
+/* ------------------------------------------------
+   RESET
+------------------------------------------------ */
+
+$("resetButton").addEventListener("click", () => {
+  stopPlayback();
+  clearOverlayVideos();
+
+  clips = [];
+  selectedClip = null;
+  currentTime = 0;
+  clipCounter = 0;
+
+  if (mediaUrl) {
+    URL.revokeObjectURL(mediaUrl);
+    mediaUrl = null;
+  }
+
+  mediaType = null;
+  mediaDuration = 0;
+  mediaWidth = 1280;
+  mediaHeight = 720;
+
+  photo.removeAttribute("src");
+  video.pause();
+  video.removeAttribute("src");
+  video.load();
+
+  photo.style.display = "none";
+  video.style.display = "none";
+
+  upload.value = "";
+
+  projectLimit = DEFAULT_PHOTO_DURATION;
+  $("durationLimit").value = projectLimit;
+
+  updateMediaFrame();
+  updateProperties();
+  renderTimeline();
+  seek(0);
+});
+
+/* ------------------------------------------------
+   EXPORT
+------------------------------------------------ */
+
+function waitForEvent(element, eventName, timeout = 15000) {
+  return new Promise((resolve, reject) => {
+    if (eventName === "loadeddata" && element.readyState >= 2) {
+      resolve();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error("Timed out waiting for " + eventName));
+    }, timeout);
+
+    function cleanup() {
+      clearTimeout(timer);
+      element.removeEventListener(eventName, success);
+      element.removeEventListener("error", failure);
+    }
+
+    function success() {
+      cleanup();
+      resolve();
+    }
+
+    function failure() {
+      cleanup();
+      reject(new Error("Media loading failed."));
+    }
+
+    element.addEventListener(eventName, success, { once: true });
+    element.addEventListener("error", failure, { once: true });
+  });
+}
+
+function waitForSeek(element, time) {
+  return new Promise((resolve, reject) => {
+    if (Math.abs(element.currentTime - time) < 0.03) {
+      resolve();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error("Could not seek media."));
+    }, 10000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      element.removeEventListener("seeked", success);
+      element.removeEventListener("error", failure);
+    }
+
+    function success() {
+      cleanup();
+      resolve();
+    }
+
+    function failure() {
+      cleanup();
+      reject(new Error("Media seek failed."));
+    }
+
+    element.addEventListener("seeked", success, { once: true });
+    element.addEventListener("error", failure, { once: true });
+
+    element.currentTime = time;
+  });
+}
+
+function drawContained(ctx, element, x, y, width, height) {
+  if (!element || element.readyState < 2) return;
+
+  const sw = element.videoWidth || element.naturalWidth;
+  const sh = element.videoHeight || element.naturalHeight;
+
+  if (!sw || !sh) return;
+
+  const ratio = Math.min(width / sw, height / sh);
+  const dw = sw * ratio;
+  const dh = sh * ratio;
+
+  ctx.drawImage(
+    element,
+    x + (width - dw) / 2,
+    y + (height - dh) / 2,
+    dw,
+    dh
+  );
+}
+
+async function recordComposition() {
+  const duration = getTimelineDuration();
+
+  if (!mediaType || duration <= 0) {
+    throw new Error("Upload a background before exporting.");
+  }
+
+  if (
+    !window.MediaRecorder ||
+    !HTMLCanvasElement.prototype.captureStream
+  ) {
+    throw new Error("Try Chrome or Edge for browser recording.");
+  }
+
+  const canvas = document.createElement("canvas");
+  const factor = Math.min(1, 1920 / mediaWidth);
+
+  canvas.width = Math.max(
+    2,
+    Math.floor(mediaWidth * factor / 2) * 2
+  );
+
+  canvas.height = Math.max(
+    2,
+    Math.floor(mediaHeight * factor / 2) * 2
+  );
+
+  const ctx = canvas.getContext("2d", { alpha: false });
+  const exportVideos = [];
+
+  for (const clip of clips) {
+    const element = document.createElement("video");
+    element.src = clip.src;
+    element.muted = true;
+    element.playsInline = true;
+    element.preload = "auto";
+
+    await waitForEvent(element, "loadeddata");
+    exportVideos.push({ clip, element });
+  }
+
+  if (mediaType === "video") {
+    await waitForEvent(video, "loadeddata");
+    await waitForSeek(video, 0);
+  }
+
+  const stream = canvas.captureStream(30);
+  let sourceStream = null;
+  const originalMuted = video.muted;
+
+  if (mediaType === "video" && video.captureStream) {
+    try {
+      video.muted = false;
+      sourceStream = video.captureStream();
+
+      for (const track of sourceStream.getAudioTracks()) {
+        stream.addTrack(track);
+      }
+    } catch (error) {
+      sourceStream = null;
+    }
+  }
+
+  const mimeTypes = [
+    "video/webm;codecs=vp9",
+    "video/webm;codecs=vp8",
+    "video/webm"
+  ];
+
+  const mimeType = mimeTypes.find(type =>
+    MediaRecorder.isTypeSupported(type)
+  );
+
+  if (!mimeType) {
+    throw new Error("No supported WebM recording format found.");
+  }
+
+  const recorder = new MediaRecorder(stream, {
+    mimeType,
+    videoBitsPerSecond: 8000000
+  });
+
+  const chunks = [];
+
+  const finished = new Promise((resolve, reject) => {
+    recorder.ondataavailable = event => {
+      if (event.data.size) chunks.push(event.data);
+    };
+
+    recorder.onstop = () => {
+      resolve(new Blob(chunks, { type: mimeType }));
+    };
+
+    recorder.onerror = () => reject(new Error("Recording failed."));
+  });
+
+  function drawFrame(time) {
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (mediaType === "image") {
+      drawContained(ctx, photo, 0, 0, canvas.width, canvas.height);
+    } else {
+      drawContained(ctx, video, 0, 0, canvas.width, canvas.height);
+    }
+
+    for (const item of exportVideos) {
+      const { clip, element } = item;
+      const localTime = time - clip.start;
+
+      if (localTime < 0 || localTime >= getClipDuration(clip)) {
+        continue;
+      }
+
+      const sourceTime = Math.min(
+        localTime * clip.speed,
+        Math.max(0, clip.trimDuration - 0.04)
+      );
+
+      if (element.readyState >= 2) {
+        const sw = element.videoWidth || 1;
+        const sh = element.videoHeight || 1;
+
+        const ratio = Math.min(
+          (canvas.width * 0.7 * clip.scale / 100) / sw,
+          canvas.height / sh
+        );
+
+        const dw = sw * ratio;
+        const dh = sh * ratio;
+
+        ctx.drawImage(
+          element,
+          (canvas.width - dw) / 2,
+          (canvas.height - dh) / 2,
+          dw,
+          dh
+        );
+      }
+
+      if (Math.abs(element.currentTime - sourceTime) > 0.2) {
+        try {
+          element.currentTime = sourceTime;
+        } catch (error) {}
+      }
+
+      if (element.paused) {
+        element.play().catch(() => {});
+      }
+    }
+  }
+
+  drawFrame(0);
+
+  if (mediaType === "video") {
+    video.muted = false;
+    await video.play().catch(() => {});
+  }
+
+  for (const item of exportVideos) {
+    item.element.pause();
+    item.element.currentTime = 0;
+  }
+
+  recorder.start(250);
+
+  const start = performance.now();
+
+  await new Promise(resolve => {
+    function render() {
+      const elapsed = (performance.now() - start) / 1000;
+      const time = Math.min(elapsed, duration);
+
+      if (mediaType === "video") {
+        const target = Math.min(
+          time,
+          Math.max(0, mediaDuration - 0.05)
+        );
+
+        if (Math.abs(video.currentTime - target) > 0.25) {
+          try {
+            video.currentTime = target;
+          } catch (error) {}
+        }
+      }
+
+      drawFrame(time);
+
+      $("exportStatus").textContent =
+        "Recording: " + Math.floor(time / duration * 100) + "%";
+
+      if (time >= duration) {
+        resolve();
+        return;
+      }
+
+      requestAnimationFrame(render);
+    }
+
+    requestAnimationFrame(render);
+  });
+
+  for (const item of exportVideos) {
+    item.element.pause();
+    item.element.removeAttribute("src");
+    item.element.load();
+  }
+
+  video.pause();
+  video.muted = originalMuted;
+
+  recorder.stop();
+
+  const blob = await finished;
+
+  stream.getTracks().forEach(track => track.stop());
+
+  if (sourceStream) {
+    sourceStream.getTracks().forEach(track => track.stop());
+  }
+
+  return blob;
+}
+
+let ffmpegInstance = null;
+
+async function getFFmpeg() {
+  if (ffmpegInstance) return ffmpegInstance;
+
+  $("exportStatus").textContent = "Loading export converter...";
+
+  const { FFmpeg } = await import(
+    "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js"
+  );
+
+  const { toBlobURL } = await import(
+    "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js"
+  );
+
+  const ffmpeg = new FFmpeg();
+
+  const baseURL =
+    "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd";
+
+  await ffmpeg.load({
+    coreURL: await toBlobURL(
+      baseURL + "/ffmpeg-core.js",
+      "text/javascript"
+    ),
+    wasmURL: await toBlobURL(
+      baseURL + "/ffmpeg-core.wasm",
+      "application/wasm"
+    )
+  });
+
+  ffmpegInstance = ffmpeg;
+  return ffmpeg;
+}
+
+async function convertRecording(blob, format, quality) {
+  if (format === "webm") return blob;
+
+  const ffmpeg = await getFFmpeg();
+
+  $("exportStatus").textContent = "Converting video...";
+
+  await ffmpeg.writeFile(
+    "input.webm",
+    new Uint8Array(await blob.arrayBuffer())
+  );
+
+  const settings = {
+    high: { scale: 1920, crf: 18 },
+    medium: { scale: 1280, crf: 23 },
+    low: { scale: 854, crf: 28 }
+  };
+
+  const q = settings[quality] || settings.high;
+
+  let args;
+
+  if (format === "gif") {
+    args = [
+      "-i", "input.webm",
+      "-vf",
+      `fps=15,scale=${q.scale}:-2:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse`,
+      "-loop", "0",
+      "output.gif"
+    ];
+  } else {
+    args = [
+      "-i", "input.webm",
+      "-c:v", "libx264",
+      "-preset", "ultrafast",
+      "-crf", String(q.crf),
+      "-vf", `scale=${q.scale}:-2`,
+      "-pix_fmt", "yuv420p",
+      "-c:a", "aac",
+      "-movflags", "+faststart",
+      "output." + format
+    ];
+  }
+
+  await ffmpeg.exec(args);
+
+  const output = await ffmpeg.readFile("output." + format);
+
+  const mimeTypes = {
+    mp4: "video/mp4",
+    mov: "video/quicktime",
+    mkv: "video/x-matroska",
+    gif: "image/gif"
+  };
+
+  return new Blob([output], { type: mimeTypes[format] });
+}
+
+$("exportButton").addEventListener("click", async () => {
+  const button = $("exportButton");
+  button.disabled = true;
+
+  $("exportStatus").textContent = "Preparing export...";
+
+  try {
+    const format = $("exportFormat").value;
+    const quality = $("exportQuality").value;
+
+    const recording = await recordComposition();
+
+    const result = await convertRecording(
+      recording,
+      format,
+      quality
+    );
+
+    const url = URL.createObjectURL(result);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "skeleton-meme." + format;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+
+    $("exportStatus").textContent = "Export complete!";
+
+  } catch (error) {
+    console.error(error);
+
+    $("exportStatus").textContent =
+      "Export failed: " + error.message;
+
+  } finally {
+    button.disabled = false;
+  }
+});
+
+// INITIALISE
+updateMediaFrame();
+updateProperties();
+renderTimeline();
+seek(0);
+</script>
+
+</body>
+</html>
